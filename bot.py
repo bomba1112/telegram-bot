@@ -2,15 +2,16 @@ import asyncio
 import os
 import httpx
 import urllib.request
+import json
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import FSInputFile
+from aiogram.types import FSInputFile, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from fpdf import FPDF
 import openai
 
-# 1. Giriş Məlumatları
+# --- TƏNZİMLƏMƏLƏR ---
 TELEGRAM_TOKEN = "8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas"
 OPENAI_API_KEY = "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"
 
@@ -19,30 +20,23 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY, http_client=http_client)
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
-# Məlumat toplama mərhələləri
 class DiagForm(StatesGroup):
     client_name = State()
     car_info = State()
     fault_code = State()
 
-# PDF Yaradan Funksiya (Yeni və Stabil CDN Linkləri)
+# PDF Yaradan Funksiya
 def create_pdf_report(data, ai_text):
     pdf = FPDF()
-    
-    font_regular = "DejaVuSans.ttf"
-    font_bold = "DejaVuSans-Bold.ttf"
-    
-    # 1. Şriftləri stabil serverdən (jsDelivr) yükləyirik
+    font_regular, font_bold = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
     if not os.path.exists(font_regular):
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", font_regular)
     if not os.path.exists(font_bold):
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans-Bold.ttf", font_bold)
-        
+    
     pdf.add_font("DejaVu", "", font_regular)
     pdf.add_font("DejaVu", "B", font_bold)
-    
     pdf.add_page()
-    
     if os.path.exists("logo.png"):
         pdf.image("logo.png", 10, 8, 35)
     
@@ -50,7 +44,6 @@ def create_pdf_report(data, ai_text):
     pdf.ln(40)
     pdf.cell(0, 10, "RƏSMİ DİAQNOSTİKA HESABATI", ln=True, align='C')
     pdf.ln(10)
-    
     pdf.set_font("DejaVu", 'B', 12)
     pdf.cell(0, 10, "MÜŞTƏRİ VƏ AVTOMOBİL:", ln=True)
     pdf.set_font("DejaVu", "", 11)
@@ -59,57 +52,46 @@ def create_pdf_report(data, ai_text):
     pdf.ln(5)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(5)
-    
     pdf.set_font("DejaVu", 'B', 12)
     pdf.cell(0, 10, "MÜHƏNDİS ANALİZİ:", ln=True)
     pdf.set_font("DejaVu", "", 10)
     pdf.multi_cell(0, 8, txt=ai_text)
     
-    safe_name = data['client_name'].replace(" ", "_")
-    file_name = f"report_{safe_name}.pdf"
+    file_name = f"report_{data['client_name'].replace(' ', '_')}.pdf"
     pdf.output(file_name)
     return file_name
 
 @dp.message(Command("start"))
-async def start_handler(message: types.Message, state: FSMContext):
-    await message.answer("Salam!\nProfessional Diaqnostika Hesabatı hazırlamaq üçün əvvəlcə **Müştərinin Adını və Soyadını** yazın:")
-    await state.set_state(DiagForm.client_name)
+async def start_handler(message: types.Message):
+    # DİQQƏT: Buradakı URL-i öz Mini App linkinlə dəyişəcəksən
+    web_app_url = "https://celil-diag-panel.vercel.app" 
+    
+    markup = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="🚀 DİAQNOSTİKA PANELİNİ AÇ", web_app=WebAppInfo(url=web_app_url))]],
+        resize_keyboard=True
+    )
+    await message.answer("Sistemi idarə etmək üçün aşağıdakı düyməyə basın:", reply_markup=markup)
 
-@dp.message(DiagForm.client_name)
-async def get_name(message: types.Message, state: FSMContext):
-    await state.update_data(client_name=message.text)
-    await message.answer("İndi isə **Avtomobilin modelini və ilini** yazın (məs: Prius 30, 2012):")
-    await state.set_state(DiagForm.car_info)
-
-@dp.message(DiagForm.car_info)
-async def get_car(message: types.Message, state: FSMContext):
-    await state.update_data(car_info=message.text)
-    await message.answer("Son olaraq, cihazın göstərdiyi **Xəta Kodunu** daxil edin:")
-    await state.set_state(DiagForm.fault_code)
-
-@dp.message(DiagForm.fault_code)
-async def handle_fault(message: types.Message, state: FSMContext):
-    user_data = await state.get_data()
-    wait_msg = await message.answer("🧠 AI mühəndis hesabatı hazırlayır və PDF yaradır...")
+# Paneldən (Mini App) gələn məlumatları emal edən hissə
+@dp.message(lambda message: message.web_app_data is not None)
+async def handle_webapp_data(message: types.Message):
+    data = json.loads(message.web_app_data.data)
+    wait_msg = await message.answer("🧠 Paneldən məlumat alındı. AI analiz edir...")
     
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "Sən professional avto-diaqnost mühəndisisən. Terminlər: 'Şam', 'Babin', 'Farsunka', 'Beyin'. Birbaşa fiziki addımları yaz: Live Data-da nəyə baxmalı, hansı pini ölçməli. Struktur: Xətanın adı, Əlamət, Fiziki yoxlama, Müəndis qeydi (V/Ohm)."},
-                {"role": "user", "content": f"Avto: {user_data['car_info']}, Xəta: {message.text}"}
+                {"role": "system", "content": "Sən professional avto-diaqnost mühəndisisən. Terminlər: 'Şam', 'Babin', 'Farsunka', 'Beyin'."},
+                {"role": "user", "content": f"Avto: {data['car_info']}, Xəta: {data['fault_code']}"}
             ]
         )
         ai_res = response.choices[0].message.content
-        
-        pdf_file = create_pdf_report(user_data, ai_res)
-        await message.answer_document(FSInputFile(pdf_file), caption="✅ Hesabat hazırdır. Çap edib müştəriyə təqdim edə bilərsiniz.")
-        
+        pdf_file = create_pdf_report(data, ai_res)
+        await message.answer_document(FSInputFile(pdf_file), caption="✅ Paneldən göndərilən məlumatlar əsasında PDF hazırlandı.")
         await wait_msg.delete()
-        await state.clear() 
-
     except Exception as e:
-        await message.answer(f"Sistem xətası: {str(e)}")
+        await message.answer(f"Xəta: {str(e)}")
 
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
