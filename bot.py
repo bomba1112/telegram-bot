@@ -4,12 +4,12 @@ from aiogram.filters import Command
 import openai
 import os
 
-# Tokenləri birbaşa mənimsədin (və ya .env faylından istifadə edin)
+# Tokenləri BURAYA dırnaq içində yazın (os.environ.get-siz)
 TELEGRAM_TOKEN = "8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas"
-OPENAI_API_KEY = "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" # Təhlükəsizlik üçün açarınızı kodda gizli saxlayın
+OPENAI_API_KEY = "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"
 
-# Dəyişən adının yuxarıdakı ilə eyni (OPENAI_API_KEY) olmasına diqqət edin
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+# Obyektləri yaradarkən adların eyni olmasına diqqət edin
+client = openai.OpenAI(api_key=OPENAI_API_KEY) # Bura OPENAI_API_KEY yazılmalıdır
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
@@ -21,7 +21,7 @@ async def start_handler(message: types.Message):
 async def handle_message(message: types.Message):
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o", # Model adının düzgünlüyünü yoxlayın (gpt-4o və ya gpt-3.5-turbo)
             messages=[
                 {"role": "system", "content": "Sən professional avto-diaqnost mühəndisisən."},
                 {"role": "user", "content": message.text}
