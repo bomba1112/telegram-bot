@@ -4,10 +4,12 @@ from aiogram.filters import Command
 import openai
 import os
 
-TELEGRAM_TOKEN = os.environ.get("8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas")
-OPENAI_API_KEY = os.environ.get("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")
+# Tokenləri birbaşa mənimsədin (və ya .env faylından istifadə edin)
+TELEGRAM_TOKEN = "8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas"
+OPENAI_API_KEY = "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" # Təhlükəsizlik üçün açarınızı kodda gizli saxlayın
 
-client = client = openai.OpenAI(api_key=OPENAI_KEY)
+# Dəyişən adının yuxarıdakı ilə eyni (OPENAI_API_KEY) olmasına diqqət edin
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
@@ -27,7 +29,7 @@ async def handle_message(message: types.Message):
         )
         await message.answer(response.choices[0].message.content)
     except Exception as e:
-        await message.answer(f"Xəta: {e}")
+        await message.answer(f"Xəta baş verdi: {e}")
 
 async def main():
     await dp.start_polling(bot)
