@@ -1,7 +1,8 @@
 import asyncio
 import os
 import httpx
-from aiogram import Bot, Dispatcher, types, FSInputFile
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import FSInputFile
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
