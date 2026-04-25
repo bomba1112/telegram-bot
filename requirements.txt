@@ -1,4 +1,5 @@
-aiogram==3.4.1
+aiogram==3.13.0
 openai
 fpdf2
 httpx
+ 
