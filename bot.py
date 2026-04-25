@@ -1,7 +1,7 @@
 import asyncio
 import os
 import httpx
-import urllib.request  # YENİ: Şrift yükləmək üçün
+import urllib.request
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import FSInputFile
 from aiogram.filters import Command
@@ -25,30 +25,27 @@ class DiagForm(StatesGroup):
     car_info = State()
     fault_code = State()
 
-# PDF Yaradan Funksiya (AZƏRBAYCAN DİLİ DƏSTƏYİ İLƏ)
+# PDF Yaradan Funksiya (Yeni və Stabil CDN Linkləri)
 def create_pdf_report(data, ai_text):
     pdf = FPDF()
     
-    # 1. Unicode Şriftləri avtomatik yükləyirik
     font_regular = "DejaVuSans.ttf"
     font_bold = "DejaVuSans-Bold.ttf"
     
+    # 1. Şriftləri stabil serverdən (jsDelivr) yükləyirik
     if not os.path.exists(font_regular):
-        urllib.request.urlretrieve("https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/master/ttf/DejaVuSans.ttf", font_regular)
+        urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", font_regular)
     if not os.path.exists(font_bold):
-        urllib.request.urlretrieve("https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/master/ttf/DejaVuSans-Bold.ttf", font_bold)
+        urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans-Bold.ttf", font_bold)
         
-    # 2. Şriftləri PDF-ə əlavə edirik
     pdf.add_font("DejaVu", "", font_regular)
     pdf.add_font("DejaVu", "B", font_bold)
     
     pdf.add_page()
     
-    # Loqo
     if os.path.exists("logo.png"):
         pdf.image("logo.png", 10, 8, 35)
     
-    # Artıq "Helvetica" yerinə "DejaVu" istifadə edirik
     pdf.set_font("DejaVu", 'B', 16)
     pdf.ln(40)
     pdf.cell(0, 10, "RƏSMİ DİAQNOSTİKA HESABATI", ln=True, align='C')
@@ -68,7 +65,6 @@ def create_pdf_report(data, ai_text):
     pdf.set_font("DejaVu", "", 10)
     pdf.multi_cell(0, 8, txt=ai_text)
     
-    # Faylın adında boşluqları sətiraltı xətlə əvəz edirik ki, error verməsin
     safe_name = data['client_name'].replace(" ", "_")
     file_name = f"report_{safe_name}.pdf"
     pdf.output(file_name)
@@ -76,9 +72,7 @@ def create_pdf_report(data, ai_text):
 
 @dp.message(Command("start"))
 async def start_handler(message: types.Message, state: FSMContext):
-    await message.answer(
-        "Salam!\nProfessional Diaqnostika Hesabatı hazırlamaq üçün əvvəlcə **Müştərinin Adını və Soyadını** yazın:"
-    )
+    await message.answer("Salam!\nProfessional Diaqnostika Hesabatı hazırlamaq üçün əvvəlcə **Müştərinin Adını və Soyadını** yazın:")
     await state.set_state(DiagForm.client_name)
 
 @dp.message(DiagForm.client_name)
