@@ -5,7 +5,7 @@ import openai
 import os
 
 TELEGRAM_TOKEN = os.environ.get("8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas")
-OPENAI_API_KEY = os.environ.get("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")
+OPENAI_KEY = os.environ.get("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")
 
 client = openai.OpenAI(api_key=OPENAI_KEY)
 bot = Bot(token=TELEGRAM_TOKEN)
