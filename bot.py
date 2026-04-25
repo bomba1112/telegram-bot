@@ -9,10 +9,8 @@ import openai
 TELEGRAM_TOKEN = "8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas"
 OPENAI_API_KEY = "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"
 
-# 2. Şəbəkə tənzimləməsi
 http_client = httpx.Client(trust_env=False)
 
-# 3. Bot və AI obyektləri
 client = openai.OpenAI(
     api_key=OPENAI_API_KEY,
     http_client=http_client
@@ -24,7 +22,8 @@ dp = Dispatcher()
 async def start_handler(message: types.Message):
     await message.answer(
         "Salam Jalil bəy! Professional Avto-Diaqnostika sisteminə xoş gəlmisiniz.\n\n"
-        "Xəta kodunu daxil edin, mən sizə usta dilində sadə və dəqiq izah verim."
+        "Xəta kodunu daxil edin. Mən sizə 'skan et' kimi mənasız məsləhətlər yox, "
+        "kapotun altında dəqiq nəyi və necə yoxlamalı olduğunuzu deyəcəm."
     )
 
 @dp.message()
@@ -39,16 +38,18 @@ async def handle_message(message: types.Message):
                 {
                     "role": "system", 
                     "content": (
-                        "Sən professional avto-diaqnost mühəndisisən. Cavablarını bu qaydalara uyğun yaz:\n"
-                        "1. Terminologiya: 'Buji' yerinə 'Şam (sveça)', 'Bobin' yerinə 'Babin', 'Vana' yerinə 'Klapan', "
-                        "'Piston' yerinə 'Porşen', 'Enjektör' yerinə 'Farsunka' sözlərini istifadə et.\n"
-                        "2. Sadə İzah: Xətanı elə izah et ki, həm sürücü, həm də usta başa düşsün. 'Çəkiclə yoxla' kimi mənasız ifadələr işlətmə.\n"
-                        "3. Struktur: \n"
+                        "Sən professional avto-diaqnost mühəndisisən. İstifadəçilərin (ustalar) artıq skan edib xətanı alıblar. "
+                        "Buna görə də ASLA 'diaqnostika cihazı ilə yoxla' və ya 'skan et' kimi sözlər işlətmə. "
+                        "Sənin vəzifən xətadan SONRAKI fiziki addımları deməkdir.\n\n"
+                        "Qaydalar:\n"
+                        "1. Terminologiya: 'Buji' -> 'Şam (sveça)', 'Bobin' -> 'Babin', 'Enjektör' -> 'Farsunka', "
+                        "'Piston' -> 'Porşen', 'Vana' -> 'Klapan', 'PCM/ECU' -> 'Beyin'.\n"
+                        "2. Üslub: Birbaşa işə keç. 'Canlı məlumatlarda (Live Data) gərginliyə bax', 'Ştekeri çıxar, pini ölç' kimi danış.\n"
+                        "3. Struktur:\n"
                         "   - Xətanın adı\n"
-                        "   - Nə baş verir? (Sadə dildə)\n"
-                        "   - Səbəblər (Sveça, babin, farsunka və s.)\n"
-                        "   - Nə etməli? (Yoxlama və təmir addımları)\n"
-                        "4. Dil: Yalnız Azərbaycan dilində cavab ver."
+                        "   - Maşındakı əlaməti (məs: motor əsir, qaz yemir)\n"
+                        "   - Fiziki Yoxlama Addımları (Məs: 1. Babinlərin yerini dəyiş, 2. Farsunkanın tokunu ölç)\n"
+                        "   - Mühəndis qeydi: Gərginlik (V) və ya müqavimət (Ohm) dəyərlərini qeyd et."
                     )
                 },
                 {"role": "user", "content": message.text}
