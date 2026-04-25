@@ -1,4 +1,2 @@
 aiogram==3.7.0
 openai==1.51.0
-pydantic==2.7.4
-pydantic-core==2.20.1
