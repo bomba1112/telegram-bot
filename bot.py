@@ -9,7 +9,7 @@ import openai
 TELEGRAM_TOKEN = "8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas"
 OPENAI_API_KEY = "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"
 
-# 2. Şəbəkə tənzimləməsi (Proxy xətası üçün)
+# 2. Şəbəkə tənzimləməsi
 http_client = httpx.Client(trust_env=False)
 
 # 3. Bot və AI obyektləri
@@ -20,15 +20,13 @@ client = openai.OpenAI(
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
-# /start komandası
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     await message.answer(
         "Salam Jalil bəy! Professional Avto-Diaqnostika sisteminə xoş gəlmisiniz.\n\n"
-        "Xəta kodunu daxil edin, mən sizə həm texniki səbəbi, həm də sadə həll yolunu təqdim edim."
+        "Xəta kodunu daxil edin, mən sizə usta dilində sadə və dəqiq izah verim."
     )
 
-# Əsas məntiq hissəsi
 @dp.message()
 async def handle_message(message: types.Message):
     if not message.text:
@@ -41,12 +39,16 @@ async def handle_message(message: types.Message):
                 {
                     "role": "system", 
                     "content": (
-                        "Sən professional avto-diaqnost mühəndisisən. Cavablarını bu formatda qur:\n"
-                        "1. Xətanın Texniki Adı (Azərbaycan və ingilis dilində).\n"
-                        "2. Sadə İzah: Xətanın mahiyyətini bir ustanın başa düşəcəyi 'xalq dilində' izah et.\n"
-                        "3. Texniki Səbəblər: Elektrik dövrəsi, sensor gərginliyi və ya mexaniki aşınma kimi mühəndis detallarını qısa qeyd et.\n"
-                        "4. Həll Yolu: Addım-addım nəyi yoxlamalı (məsələn: multimetrlə yoxlama, təmizləmə və ya dəyişmə).\n"
-                        "Üslubun həm professional, həm də anlaşıqlı olmalıdır."
+                        "Sən professional avto-diaqnost mühəndisisən. Cavablarını bu qaydalara uyğun yaz:\n"
+                        "1. Terminologiya: 'Buji' yerinə 'Şam (sveça)', 'Bobin' yerinə 'Babin', 'Vana' yerinə 'Klapan', "
+                        "'Piston' yerinə 'Porşen', 'Enjektör' yerinə 'Farsunka' sözlərini istifadə et.\n"
+                        "2. Sadə İzah: Xətanı elə izah et ki, həm sürücü, həm də usta başa düşsün. 'Çəkiclə yoxla' kimi mənasız ifadələr işlətmə.\n"
+                        "3. Struktur: \n"
+                        "   - Xətanın adı\n"
+                        "   - Nə baş verir? (Sadə dildə)\n"
+                        "   - Səbəblər (Sveça, babin, farsunka və s.)\n"
+                        "   - Nə etməli? (Yoxlama və təmir addımları)\n"
+                        "4. Dil: Yalnız Azərbaycan dilində cavab ver."
                     )
                 },
                 {"role": "user", "content": message.text}
@@ -58,9 +60,7 @@ async def handle_message(message: types.Message):
     except Exception as e:
         await message.answer(f"Sistem xətası: {str(e)}")
 
-# Botu işə salma
 async def main():
-    print("Sistem aktivdir...")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
@@ -69,4 +69,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         pass
-
+ 
