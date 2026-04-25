@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diaqnostika Paneli</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .card { background: #2d2d2d; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        h2 { color: #0088cc; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #404040; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #0088cc; border: none; color: white; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button:active { background: #006699; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>📊 DİAQNOSTİKA PANELİ</h2>
+        <p>Məlumatları daxil edin:</p>
+        <input type="text" id="name" placeholder="Müştəri Adı və Soyadı">
+        <input type="text" id="car" placeholder="Avtomobil (Məs: BMW X5, 2018)">
+        <input type="text" id="fault" placeholder="Xəta Kodu (Məs: P0300)">
+        <button id="send">HESABATI HAZIRLA</button>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // Pəncərəni tam ekran açır
+
+        document.getElementById("send").onclick = function() {
+            let name = document.getElementById("name").value;
+            let car = document.getElementById("car").value;
+            let fault = document.getElementById("fault").value;
+
+            if(!name || !car || !fault) {
+                alert("Zəhmət olmasa bütün xanaları doldurun!");
+                return;
+            }
+
+            let data = {
+                client_name: name,
+                car_info: car,
+                fault_code: fault
+            };
+
+            tg.sendData(JSON.stringify(data)); // Məlumatı bota göndərir
+            tg.close(); // Paneli bağlayır
+        };
+    </script>
+</body>
+</html>
