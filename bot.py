@@ -64,7 +64,7 @@ def create_pdf_report(data, ai_text):
 @dp.message(Command("start"))
 async def start_handler(message: types.Message):
     # DİQQƏT: Buradakı URL-i öz Mini App linkinlə dəyişəcəksən
-    web_app_url = "https://celil-diag-panel.vercel.app" 
+    WEB_APP_URL = "https://bomba1112.github.io/telegram-bot/" 
     
     markup = ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="🚀 DİAQNOSTİKA PANELİNİ AÇ", web_app=WebAppInfo(url=web_app_url))]],
