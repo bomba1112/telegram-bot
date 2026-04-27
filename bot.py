@@ -21,15 +21,13 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 def create_pdf_report(data, ai_text):
-    # FPDF XƏTASININ (Çökmənin) QARŞISINI ALMAQ ÜÇÜN SÜZGƏC
     ai_text = ai_text.replace("**", "").replace("*", "")
-    ai_text = re.sub(r'[-=_]{4,}', ' ', ai_text) # Uzun xətləri silir
-    ai_text = re.sub(r'([^\s]{40})', r'\1 ', ai_text) # 40 hərfdən uzun bitişik sözü bölür
+    ai_text = re.sub(r'[-=_]{4,}', ' ', ai_text) 
+    ai_text = re.sub(r'([^\s]{40})', r'\1 ', ai_text) 
     
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Şriftləri yükləyirik
     f_r, f_b = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
     if not os.path.exists(f_r): 
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
@@ -43,19 +41,18 @@ def create_pdf_report(data, ai_text):
     # 1. LOGO (Böyük və mərkəzdə)
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
-        # x=75 mərkəzləşdirir, w=60 böyük ölçü (6 sm eni) verir.
-        pdf.image(logo_file, 75, 10, 60) 
-        # Loqo y=10-dan başlayır, hündürlüyü ~60-dır. 10+60=70. +3mm (0.3 sm) məsafə = 73
-        pdf.set_y(73) 
+        pdf.image(logo_file, 80, 10, 50) 
+        # Koordinatı məcburi olaraq aşağı salırıq (Üst-üstə düşmənin 100% qarşısını alır)
+        pdf.set_y(68) 
     else:
         pdf.set_y(20)
     
     # 2. SERVİS VƏ MÜTƏXƏSSİS MƏLUMATLARI
     pdf.set_font("DejaVu", "B", 14)
-    pdf.cell(0, 8, "AVTODIAGNOZAI SERVİS", ln=True, align='C')
+    pdf.cell(0, 8, "AVTODİAQNOSTİKA SERVİSİ", ln=True, align='C')
     pdf.set_font("DejaVu", "", 10)
     pdf.cell(0, 5, "Mütəxəssis: Cəlil bəy", ln=True, align='C')
-    pdf.cell(0, 5, "Tel: +994 50 250 62 42 | Ünvan: Sumqayıt ş.", ln=True, align='C')
+    pdf.cell(0, 5, "Tel: +994 50 250 62 42 | Ünvan: Azərbaycan, Sumqayıt ş.", ln=True, align='C')
     pdf.ln(8)
     
     # 3. HESABAT BAŞLIĞI
@@ -71,7 +68,6 @@ def create_pdf_report(data, ai_text):
     pdf.cell(95, 8, "AVTOMOBİL MƏLUMATLARI", border=1, ln=1, align='C', fill=True)
     
     pdf.set_font("DejaVu", "", 9)
-    # Adların və kodların həddən artıq uzun olub PDF-i pozmaması üçün kəsirik
     c_name = data['client_name'][:40]
     c_car = data['car_info'][:40]
     c_fault = data['fault_code'][:40]
@@ -111,7 +107,7 @@ def create_pdf_report(data, ai_text):
     
     pdf.ln(8)
 
-    # 6. AI ANALİZİ - SƏTİR SƏTİR RƏNGLƏMƏ
+    # 6. AI ANALİZİ
     pdf.set_font("DejaVu", "B", 11)
     pdf.cell(0, 10, "USTA RƏYİ VƏ TÖVSİYƏLƏR (AI ANALİZİ)", ln=True)
     
@@ -121,7 +117,6 @@ def create_pdf_report(data, ai_text):
             pdf.ln(3) 
             continue
             
-        # ƏGƏR SƏTİRDƏ % İŞARƏSİ VARSA, QIRMIZI VƏ QALIN ET
         if "%" in line:
             pdf.set_text_color(220, 0, 0)
             pdf.set_font("DejaVu", "B", 10) 
@@ -129,7 +124,7 @@ def create_pdf_report(data, ai_text):
             pdf.set_text_color(0, 0, 0)
             pdf.set_font("DejaVu", "", 10) 
             
-        pdf.set_x(10) # Düzəliş qarantiyası üçün
+        pdf.set_x(10) 
         pdf.multi_cell(0, 7, txt=line)
         
     pdf.set_text_color(0, 0, 0)
