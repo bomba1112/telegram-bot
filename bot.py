@@ -20,38 +20,41 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 def create_pdf_report(data, ai_text):
-    # AI mətndəki ulduzları silirik
+    # AI mətndəki ulduzları təmizləyirik
     ai_text = ai_text.replace("**", "").replace("*", "")
     
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Şriftləri yükləyirik
+    # Şriftləri yükləyirik (Azərbaycan şriftləri üçün)
     f_r, f_b = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
-    if not os.path.exists(f_r): urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
-    if not os.path.exists(f_b): urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans-Bold.ttf", f_b)
-    pdf.add_font("DejaVu", "", f_r); pdf.add_font("DejaVu", "B", f_b)
+    if not os.path.exists(f_r): 
+        urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
+    if not os.path.exists(f_b): 
+        urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans-Bold.ttf", f_b)
+    
+    pdf.add_font("DejaVu", "", f_r)
+    pdf.add_font("DejaVu", "B", f_b)
     
     pdf.add_page()
     
-    # 1. LOGO (Mərkəzdə və normal ölçüdə: 50mm enində)
+    # 1. LOGO (Mərkəzdə, 50mm enində)
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
         pdf.image(logo_file, 80, 10, 50) 
-        pdf.set_y(60) # Yazılar loqonun altından başlayır
+        pdf.set_y(60) # Yazıların loqonun altından başlaması üçün
     else:
         pdf.set_y(20)
     
-    # 2. SERVİS MƏLUMATLARI (Cəlil bəyin məlumatları)
+    # 2. SERVİS VƏ MÜTƏXƏSSİS MƏLUMATLARI
     pdf.set_font("DejaVu", "B", 14)
-    pdf.cell(0, 8, "AVTODIAGNOZAI SERVİS / AUTO-TECH SERVICE", ln=True, align='C')
+    pdf.cell(0, 8, "AVTODIAGNOZAI SERVİS", ln=True, align='C')
     pdf.set_font("DejaVu", "", 10)
     pdf.cell(0, 5, "Mütəxəssis: Cəlil bəy", ln=True, align='C')
-    # Nömrəni kodda buradan dəyişə bilərsən
-    pdf.cell(0, 5, "Tel: +994 50 XXX XX XX | Ünvan: Sumqayıt ş.", ln=True, align='C')
+    pdf.cell(0, 5, "Tel: +994 50 250 62 42 | Ünvan: Sumqayıt ş.", ln=True, align='C')
     pdf.ln(8)
     
-    # 3. BAŞLIQ
+    # 3. HESABAT BAŞLIĞI
     report_no = datetime.now().strftime("%d%m%Y-%H%M")
     pdf.set_font("DejaVu", "B", 11)
     pdf.set_fill_color(230, 230, 230)
@@ -71,7 +74,7 @@ def create_pdf_report(data, ai_text):
     pdf.cell(45, 8, "Xəta Kodu:", border='LTB'); pdf.cell(50, 8, f"{data['fault_code']}", border='RTB', ln=1)
     pdf.ln(8)
 
-    # 5. DİAQNOSTİKA CƏDVƏLİ
+    # 5. DİAQNOSTİKA CƏDVƏLİ (Statuslar AI mətni əsasında təyin olunur)
     pdf.set_font("DejaVu", "B", 10)
     pdf.cell(50, 8, "Sistem / Blok", border=1, align='C', fill=True)
     pdf.cell(25, 8, "Status", border=1, align='C', fill=True)
@@ -87,6 +90,7 @@ def create_pdf_report(data, ai_text):
     ]
 
     for sys_name, code_key, name_key in systems:
+        # AI mətnində sistemin adı keçirsə "Xəta var" statusu verilir
         is_error = name_key.lower() in ai_text.lower() or code_key.lower() in ai_text.lower()
         status = "Xəta var" if is_error else "Normal"
         code = data['fault_code'] if is_error else "-"
@@ -99,14 +103,14 @@ def create_pdf_report(data, ai_text):
     
     pdf.ln(8)
 
-    # 6. USTA RƏYİ (SÜNİ İNTELLEKT)
+    # 6. AI ANALİZİ (Usta rəyi)
     pdf.set_font("DejaVu", "B", 11)
     pdf.cell(0, 10, "USTA RƏYİ VƏ TÖVSİYƏLƏR (AI ANALİZİ)", ln=True)
     pdf.set_font("DejaVu", "", 10)
     pdf.multi_cell(0, 7, txt=ai_text)
     pdf.ln(10)
 
-    # 7. MÖHÜR (Sol tərəfdə)
+    # 7. MÖHÜR (Sol tərəfdə, imza sətirləri olmadan)
     y_pos = pdf.get_y()
     if y_pos > 240: pdf.add_page(); y_pos = 20
     
@@ -115,7 +119,7 @@ def create_pdf_report(data, ai_text):
         pdf.image(mohur_file, 10, y_pos, 45) 
         pdf.set_y(y_pos + 50)
         
-    # 8. DISCLAIMER
+    # 8. DISCLAIMER (Xəbərdarlıq)
     pdf.set_font("DejaVu", "", 8)
     disclaimer = "Bu hesabat yalnız diaqnostika anında avtomobilin elektron sistemlərinin vəziyyətini əks etdirir və təmir məqsədi daşımır."
     pdf.multi_cell(0, 5, txt=disclaimer, align='C')
@@ -126,20 +130,24 @@ def create_pdf_report(data, ai_text):
 @dp.message(Command("start"))
 async def start(message: types.Message):
     markup = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="🚀 PANELİ AÇ", web_app=WebAppInfo(url=WEB_APP_URL))]], resize_keyboard=True)
-    await message.answer("Professional Diaqnostika Sisteminə xoş gəldiniz:", reply_markup=markup)
+    await message.answer("Sistemə xoş gəldiniz. Hesabat hazırlamaq üçün Paneli açın:", reply_markup=markup)
 
 @dp.message(lambda m: m.web_app_data is not None)
 async def handle_data(message: types.Message):
     res = json.loads(message.web_app_data.data)
     wait = await message.answer("🧠 Süni İntellekt analiz edir...")
     try:
-        # AI üçün qəti xəbərdarlıqlar (faiz və ulduzlar üçün)
+        # AI-yə faiz işarəsi və ulduzlar haqqında qəti təlimat
         prompt = (f"Sən professional avto-mühəndissən. Avtomobil: {res['car_info']}, Xəta: {res['fault_code']}. "
                   "Hesabatı Azərbaycan dilində yaz. Nasazlıqları faizlə sırala. "
-                  "MÜTLƏQ DİQQƏT: Faiz işarəsini rəqəmdən sonra yaz (məsələn: 80%). Qətiyyən %80 yazma! "
-                  "Fiziki olaraq nəyi yoxlamalı olduğunu dəqiq qeyd et. Mətndə ulduz (*) işarələrindən qətiyyən istifadə etmə.")
+                  "MÜHÜM: Faiz işarəsini rəqəmdən dərhal sonra yaz (məs: 75%). Əsla əvvələ qoyma. "
+                  "Mətndə heç bir ulduz (*) işarəsindən istifadə etmə.Faizlə göstərilən sətirləri qalınlaşdır və qırmızı rəngdə yaz. "
+                  "Fiziki olaraq hansı pini və ya kabeli yoxlamaq lazımdırsa, dəqiq yaz.")
         
-        ai = client.chat.completions.create(model="gpt-4o", messages=[{"role":"system","content":"Sən professional diaqnostsan."},{"role":"user","content":prompt}])
+        ai = client.chat.completions.create(
+            model="gpt-4o", 
+            messages=[{"role":"system","content":"Sən professional diaqnostsan."},{"role":"user","content":prompt}]
+        )
         pdf = create_pdf_report(res, ai.choices[0].message.content)
         await message.answer_document(FSInputFile(pdf), caption="✅ Hesabat hazırdır.")
         await wait.delete()
