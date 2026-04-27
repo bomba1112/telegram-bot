@@ -26,7 +26,7 @@ def create_pdf_report(data, ai_text):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Şriftləri yükləyirik (Azərbaycan şriftləri üçün)
+    # Şriftləri yükləyirik
     f_r, f_b = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
     if not os.path.exists(f_r): 
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
@@ -38,11 +38,11 @@ def create_pdf_report(data, ai_text):
     
     pdf.add_page()
     
-    # 1. LOGO (Mərkəzdə, 50mm enində)
+    # 1. LOGO 
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
         pdf.image(logo_file, 80, 10, 50) 
-        pdf.set_y(60) # Yazıların loqonun altından başlaması üçün
+        pdf.set_y(60) 
     else:
         pdf.set_y(20)
     
@@ -74,7 +74,7 @@ def create_pdf_report(data, ai_text):
     pdf.cell(45, 8, "Xəta Kodu:", border='LTB'); pdf.cell(50, 8, f"{data['fault_code']}", border='RTB', ln=1)
     pdf.ln(8)
 
-    # 5. DİAQNOSTİKA CƏDVƏLİ (Statuslar AI mətni əsasında təyin olunur)
+    # 5. DİAQNOSTİKA CƏDVƏLİ
     pdf.set_font("DejaVu", "B", 10)
     pdf.cell(50, 8, "Sistem / Blok", border=1, align='C', fill=True)
     pdf.cell(25, 8, "Status", border=1, align='C', fill=True)
@@ -90,7 +90,6 @@ def create_pdf_report(data, ai_text):
     ]
 
     for sys_name, code_key, name_key in systems:
-        # AI mətnində sistemin adı keçirsə "Xəta var" statusu verilir
         is_error = name_key.lower() in ai_text.lower() or code_key.lower() in ai_text.lower()
         status = "Xəta var" if is_error else "Normal"
         code = data['fault_code'] if is_error else "-"
@@ -103,14 +102,32 @@ def create_pdf_report(data, ai_text):
     
     pdf.ln(8)
 
-    # 6. AI ANALİZİ (Usta rəyi)
+    # 6. AI ANALİZİ - SƏTİR SƏTİR RƏNGLƏMƏ
     pdf.set_font("DejaVu", "B", 11)
     pdf.cell(0, 10, "USTA RƏYİ VƏ TÖVSİYƏLƏR (AI ANALİZİ)", ln=True)
-    pdf.set_font("DejaVu", "", 10)
-    pdf.multi_cell(0, 7, txt=ai_text)
+    
+    # Mətni sətirlərə bölürük
+    for line in ai_text.split('\n'):
+        line = line.strip()
+        if not line:
+            pdf.ln(3) # Boş sətirdə kiçik məsafə
+            continue
+            
+        # ƏGƏR SƏTİRDƏ % İŞARƏSİ VARSA, QIRMIZI VƏ QALIN ET
+        if "%" in line:
+            pdf.set_text_color(220, 0, 0) # Qırmızı
+            pdf.set_font("DejaVu", "B", 10) # Qalın
+        else:
+            pdf.set_text_color(0, 0, 0) # Qara
+            pdf.set_font("DejaVu", "", 10) # Normal
+            
+        pdf.multi_cell(0, 7, txt=line)
+        
+    # Sonrakı mətnlərin (disclaimer) qırmızı olmaması üçün rəngi sıfırlayırıq
+    pdf.set_text_color(0, 0, 0)
     pdf.ln(10)
 
-    # 7. MÖHÜR (Sol tərəfdə, imza sətirləri olmadan)
+    # 7. MÖHÜR 
     y_pos = pdf.get_y()
     if y_pos > 240: pdf.add_page(); y_pos = 20
     
@@ -119,7 +136,7 @@ def create_pdf_report(data, ai_text):
         pdf.image(mohur_file, 10, y_pos, 45) 
         pdf.set_y(y_pos + 50)
         
-    # 8. DISCLAIMER (Xəbərdarlıq)
+    # 8. DISCLAIMER 
     pdf.set_font("DejaVu", "", 8)
     disclaimer = "Bu hesabat yalnız diaqnostika anında avtomobilin elektron sistemlərinin vəziyyətini əks etdirir və təmir məqsədi daşımır."
     pdf.multi_cell(0, 5, txt=disclaimer, align='C')
@@ -137,11 +154,12 @@ async def handle_data(message: types.Message):
     res = json.loads(message.web_app_data.data)
     wait = await message.answer("🧠 Süni İntellekt analiz edir...")
     try:
-        # AI-yə faiz işarəsi və ulduzlar haqqında qəti təlimat
+        # AI-yə ancaq təmiz mətn verməsini tapşırırıq
         prompt = (f"Sən professional avto-mühəndissən. Avtomobil: {res['car_info']}, Xəta: {res['fault_code']}. "
                   "Hesabatı Azərbaycan dilində yaz. Nasazlıqları faizlə sırala. "
                   "MÜHÜM: Faiz işarəsini rəqəmdən dərhal sonra yaz (məs: 75%). Əsla əvvələ qoyma. "
-                  "Mətndə heç bir ulduz (*) işarəsindən istifadə etmə.Faizlə göstərilən sətirləri qalınlaşdır və qırmızı rəngdə yaz. "
+                  "Mətndə heç bir ulduz (*), HTML və ya qalınlaşdırma işarəsindən istifadə etmə. "
+                  "Sən sadəcə mətni yaz, mətnin rənglənməsini mənim sistemim edəcək. "
                   "Fiziki olaraq hansı pini və ya kabeli yoxlamaq lazımdırsa, dəqiq yaz.")
         
         ai = client.chat.completions.create(
