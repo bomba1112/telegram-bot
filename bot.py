@@ -3,6 +3,7 @@ import os
 import httpx
 import urllib.request
 import json
+import re
 from datetime import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import FSInputFile, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
@@ -20,13 +21,15 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 def create_pdf_report(data, ai_text):
-    # AI mətndəki ulduzları təmizləyirik
+    # FPDF XƏTASININ QARŞISINI ALMAQ ÜÇÜN MƏTNİ TƏMİZLƏYİRİK
     ai_text = ai_text.replace("**", "").replace("*", "")
+    # Uzun qırıq xətləri (----) və birləşik sözləri silirik (horizontal space xətası üçün)
+    ai_text = re.sub(r'[-=_]{5,}', ' ', ai_text)
+    ai_text = re.sub(r'([^\s]{45})', r'\1 ', ai_text) # 45 hərfdən uzun bitişik sözü bölür
     
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Şriftləri yükləyirik
     f_r, f_b = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
     if not os.path.exists(f_r): 
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
@@ -35,7 +38,6 @@ def create_pdf_report(data, ai_text):
     
     pdf.add_font("DejaVu", "", f_r)
     pdf.add_font("DejaVu", "B", f_b)
-    
     pdf.add_page()
     
     # 1. LOGO 
@@ -67,11 +69,16 @@ def create_pdf_report(data, ai_text):
     pdf.cell(95, 8, "AVTOMOBİL MƏLUMATLARI", border=1, ln=1, align='C', fill=True)
     
     pdf.set_font("DejaVu", "", 9)
-    pdf.cell(45, 8, "Ad, Soyad:", border='LTB'); pdf.cell(50, 8, f"{data['client_name']}", border='RTB')
-    pdf.cell(45, 8, "Marka / Model:", border='LTB'); pdf.cell(50, 8, f"{data['car_info']}", border='RTB', ln=1)
+    # Bura da qorunma əlavə edirik (Uzun adlar daşıb PDF-i poza bilər)
+    c_name = data['client_name'][:40]
+    c_car = data['car_info'][:40]
+    c_fault = data['fault_code'][:40]
+    
+    pdf.cell(45, 8, "Ad, Soyad:", border='LTB'); pdf.cell(50, 8, f"{c_name}", border='RTB')
+    pdf.cell(45, 8, "Marka / Model:", border='LTB'); pdf.cell(50, 8, f"{c_car}", border='RTB', ln=1)
     
     pdf.cell(45, 8, "Tarix:", border='LTB'); pdf.cell(50, 8, f"{datetime.now().strftime('%d.%m.%Y')}", border='RTB')
-    pdf.cell(45, 8, "Xəta Kodu:", border='LTB'); pdf.cell(50, 8, f"{data['fault_code']}", border='RTB', ln=1)
+    pdf.cell(45, 8, "Xəta Kodu:", border='LTB'); pdf.cell(50, 8, f"{c_fault}", border='RTB', ln=1)
     pdf.ln(8)
 
     # 5. DİAQNOSTİKA CƏDVƏLİ
@@ -92,7 +99,7 @@ def create_pdf_report(data, ai_text):
     for sys_name, code_key, name_key in systems:
         is_error = name_key.lower() in ai_text.lower() or code_key.lower() in ai_text.lower()
         status = "Xəta var" if is_error else "Normal"
-        code = data['fault_code'] if is_error else "-"
+        code = c_fault if is_error else "-"
         desc = "Sistemdə nasazlıq aşkarlandı" if is_error else "Xəta yoxdur"
         
         pdf.cell(50, 8, sys_name, border=1)
@@ -106,24 +113,23 @@ def create_pdf_report(data, ai_text):
     pdf.set_font("DejaVu", "B", 11)
     pdf.cell(0, 10, "USTA RƏYİ VƏ TÖVSİYƏLƏR (AI ANALİZİ)", ln=True)
     
-    # Mətni sətirlərə bölürük
     for line in ai_text.split('\n'):
         line = line.strip()
         if not line:
-            pdf.ln(3) # Boş sətirdə kiçik məsafə
+            pdf.ln(3) 
             continue
             
         # ƏGƏR SƏTİRDƏ % İŞARƏSİ VARSA, QIRMIZI VƏ QALIN ET
         if "%" in line:
-            pdf.set_text_color(220, 0, 0) # Qırmızı
-            pdf.set_font("DejaVu", "B", 10) # Qalın
+            pdf.set_text_color(220, 0, 0) # Qırmızı rəng
+            pdf.set_font("DejaVu", "B", 10) 
         else:
-            pdf.set_text_color(0, 0, 0) # Qara
-            pdf.set_font("DejaVu", "", 10) # Normal
+            pdf.set_text_color(0, 0, 0) # Qara rəng
+            pdf.set_font("DejaVu", "", 10) 
             
+        pdf.set_x(10) # FPDF xətasını sığortalamaq üçün koordinatı 10-a kilidləyirik
         pdf.multi_cell(0, 7, txt=line)
         
-    # Sonrakı mətnlərin (disclaimer) qırmızı olmaması üçün rəngi sıfırlayırıq
     pdf.set_text_color(0, 0, 0)
     pdf.ln(10)
 
@@ -139,9 +145,10 @@ def create_pdf_report(data, ai_text):
     # 8. DISCLAIMER 
     pdf.set_font("DejaVu", "", 8)
     disclaimer = "Bu hesabat yalnız diaqnostika anında avtomobilin elektron sistemlərinin vəziyyətini əks etdirir və təmir məqsədi daşımır."
+    pdf.set_x(10)
     pdf.multi_cell(0, 5, txt=disclaimer, align='C')
     
-    file_name = f"report_{data['client_name'].replace(' ','_')}.pdf"
+    file_name = f"report_{data['client_name'].replace(' ','_')[:20]}.pdf"
     pdf.output(file_name); return file_name
 
 @dp.message(Command("start"))
@@ -154,11 +161,10 @@ async def handle_data(message: types.Message):
     res = json.loads(message.web_app_data.data)
     wait = await message.answer("🧠 Süni İntellekt analiz edir...")
     try:
-        # AI-yə ancaq təmiz mətn verməsini tapşırırıq
         prompt = (f"Sən professional avto-mühəndissən. Avtomobil: {res['car_info']}, Xəta: {res['fault_code']}. "
                   "Hesabatı Azərbaycan dilində yaz. Nasazlıqları faizlə sırala. "
                   "MÜHÜM: Faiz işarəsini rəqəmdən dərhal sonra yaz (məs: 75%). Əsla əvvələ qoyma. "
-                  "Mətndə heç bir ulduz (*), HTML və ya qalınlaşdırma işarəsindən istifadə etmə. "
+                  "Mətndə heç bir ulduz (*), HTML, qalınlaşdırma və ya ayırıcı xətt (----) işarələrindən istifadə etmə! "
                   "Sən sadəcə mətni yaz, mətnin rənglənməsini mənim sistemim edəcək. "
                   "Fiziki olaraq hansı pini və ya kabeli yoxlamaq lazımdırsa, dəqiq yaz.")
         
