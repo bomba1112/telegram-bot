@@ -21,15 +21,15 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 def create_pdf_report(data, ai_text):
-    # FPDF XƏTASININ QARŞISINI ALMAQ ÜÇÜN MƏTNİ TƏMİZLƏYİRİK
+    # FPDF XƏTASININ (Çökmənin) QARŞISINI ALMAQ ÜÇÜN SÜZGƏC
     ai_text = ai_text.replace("**", "").replace("*", "")
-    # Uzun qırıq xətləri (----) və birləşik sözləri silirik (horizontal space xətası üçün)
-    ai_text = re.sub(r'[-=_]{5,}', ' ', ai_text)
-    ai_text = re.sub(r'([^\s]{45})', r'\1 ', ai_text) # 45 hərfdən uzun bitişik sözü bölür
+    ai_text = re.sub(r'[-=_]{4,}', ' ', ai_text) # Uzun xətləri silir
+    ai_text = re.sub(r'([^\s]{40})', r'\1 ', ai_text) # 40 hərfdən uzun bitişik sözü bölür
     
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     
+    # Şriftləri yükləyirik
     f_r, f_b = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
     if not os.path.exists(f_r): 
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
@@ -40,11 +40,13 @@ def create_pdf_report(data, ai_text):
     pdf.add_font("DejaVu", "B", f_b)
     pdf.add_page()
     
-    # 1. LOGO 
+    # 1. LOGO (Böyük və mərkəzdə)
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
-        pdf.image(logo_file, 80, 10, 50) 
-        pdf.set_y(60) 
+        # x=75 mərkəzləşdirir, w=60 böyük ölçü (6 sm eni) verir.
+        pdf.image(logo_file, 75, 10, 60) 
+        # Loqo y=10-dan başlayır, hündürlüyü ~60-dır. 10+60=70. +3mm (0.3 sm) məsafə = 73
+        pdf.set_y(73) 
     else:
         pdf.set_y(20)
     
@@ -69,7 +71,7 @@ def create_pdf_report(data, ai_text):
     pdf.cell(95, 8, "AVTOMOBİL MƏLUMATLARI", border=1, ln=1, align='C', fill=True)
     
     pdf.set_font("DejaVu", "", 9)
-    # Bura da qorunma əlavə edirik (Uzun adlar daşıb PDF-i poza bilər)
+    # Adların və kodların həddən artıq uzun olub PDF-i pozmaması üçün kəsirik
     c_name = data['client_name'][:40]
     c_car = data['car_info'][:40]
     c_fault = data['fault_code'][:40]
@@ -121,13 +123,13 @@ def create_pdf_report(data, ai_text):
             
         # ƏGƏR SƏTİRDƏ % İŞARƏSİ VARSA, QIRMIZI VƏ QALIN ET
         if "%" in line:
-            pdf.set_text_color(220, 0, 0) # Qırmızı rəng
+            pdf.set_text_color(220, 0, 0)
             pdf.set_font("DejaVu", "B", 10) 
         else:
-            pdf.set_text_color(0, 0, 0) # Qara rəng
+            pdf.set_text_color(0, 0, 0)
             pdf.set_font("DejaVu", "", 10) 
             
-        pdf.set_x(10) # FPDF xətasını sığortalamaq üçün koordinatı 10-a kilidləyirik
+        pdf.set_x(10) # Düzəliş qarantiyası üçün
         pdf.multi_cell(0, 7, txt=line)
         
     pdf.set_text_color(0, 0, 0)
