@@ -21,6 +21,7 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 def create_pdf_report(data, ai_text):
+    # PDF-i çökdürə biləcək simvolları və ulduzları təmizləyirik
     ai_text = ai_text.replace("**", "").replace("*", "")
     ai_text = re.sub(r'[-=_]{4,}', ' ', ai_text) 
     ai_text = re.sub(r'([^\s]{40})', r'\1 ', ai_text) 
@@ -28,6 +29,7 @@ def create_pdf_report(data, ai_text):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     
+    # Şriftlərin koda tanıdılması
     f_r, f_b = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
     if not os.path.exists(f_r): 
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
@@ -38,22 +40,23 @@ def create_pdf_report(data, ai_text):
     pdf.add_font("DejaVu", "B", f_b)
     pdf.add_page()
     
-    # 1. LOGO (Böyük və mərkəzdə)
+    # 1. LOGO (100% BÖYÜDÜLMÜŞ ÖLÇÜ)
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
-        pdf.image(logo_file, 80, 10, 50) 
-        # Koordinatı məcburi olaraq aşağı salırıq (Üst-üstə düşmənin 100% qarşısını alır)
-        pdf.set_y(68) 
+        # Eni 120 (ikiqat böyük), X oxu 45 (tam mərkəz üçün)
+        pdf.image(logo_file, 45, 10, 120) 
+        # Loqo nəhəng olduğu üçün yazıları xeyli aşağıdan (130-dan) başladırıq ki, üst-üstə düşməsin
+        pdf.set_y(130) 
     else:
         pdf.set_y(20)
     
-    # 2. SERVİS VƏ MÜTƏXƏSSİS MƏLUMATLARI
+    # 2. SERVİS VƏ MÜTƏXƏSSİS MƏLUMATLARI 
     pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 8, "AVTODİAQNOSTİKA SERVİSİ", ln=True, align='C')
     pdf.set_font("DejaVu", "", 10)
-    pdf.cell(0, 5, "Mütəxəssis: Cəlil bəy", ln=True, align='C')
-    pdf.cell(0, 5, "Tel: +994 50 250 62 42 | Ünvan: Azərbaycan, Sumqayıt ş.", ln=True, align='C')
-    pdf.ln(8)
+    pdf.cell(0, 6, "Mütəxəssis: Cəlil bəy", ln=True, align='C')
+    pdf.cell(0, 6, "Tel: +994 50 250 62 42 | Ünvan: Azərbaycan, Sumqayıt ş.", ln=True, align='C')
+    pdf.ln(10)
     
     # 3. HESABAT BAŞLIĞI
     report_no = datetime.now().strftime("%d%m%Y-%H%M")
@@ -107,7 +110,7 @@ def create_pdf_report(data, ai_text):
     
     pdf.ln(8)
 
-    # 6. AI ANALİZİ
+    # 6. AI ANALİZİ (Rəngləmə ilə)
     pdf.set_font("DejaVu", "B", 11)
     pdf.cell(0, 10, "USTA RƏYİ VƏ TÖVSİYƏLƏR (AI ANALİZİ)", ln=True)
     
@@ -130,7 +133,7 @@ def create_pdf_report(data, ai_text):
     pdf.set_text_color(0, 0, 0)
     pdf.ln(10)
 
-    # 7. MÖHÜR 
+    # 7. MÖHÜR (Sol tərəfdə)
     y_pos = pdf.get_y()
     if y_pos > 240: pdf.add_page(); y_pos = 20
     
@@ -139,7 +142,7 @@ def create_pdf_report(data, ai_text):
         pdf.image(mohur_file, 10, y_pos, 45) 
         pdf.set_y(y_pos + 50)
         
-    # 8. DISCLAIMER 
+    # 8. DISCLAIMER
     pdf.set_font("DejaVu", "", 8)
     disclaimer = "Bu hesabat yalnız diaqnostika anında avtomobilin elektron sistemlərinin vəziyyətini əks etdirir və təmir məqsədi daşımır."
     pdf.set_x(10)
