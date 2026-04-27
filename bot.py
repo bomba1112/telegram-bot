@@ -3,7 +3,6 @@ import os
 import httpx
 import urllib.request
 import json
-import re
 from datetime import datetime
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import FSInputFile, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
@@ -35,20 +34,22 @@ def create_pdf_report(data, ai_text):
     
     pdf.add_page()
     
-    # 1. LOGO (Yuxarıda)
+    # 1. LOGO (Mərkəzdə və normal ölçüdə: 50mm enində)
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
-        pdf.image(logo_file, 10, 8, 190)
-        pdf.set_y(65) # Loqonun altında qalmaması üçün Y oxunu aşağı salırıq
+        pdf.image(logo_file, 80, 10, 50) 
+        pdf.set_y(60) # Yazılar loqonun altından başlayır
     else:
         pdf.set_y(20)
     
-    # 2. SERVİS MƏLUMATLARI
+    # 2. SERVİS MƏLUMATLARI (Cəlil bəyin məlumatları)
     pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 8, "AVTODIAGNOZAI SERVİS / AUTO-TECH SERVICE", ln=True, align='C')
     pdf.set_font("DejaVu", "", 10)
     pdf.cell(0, 5, "Mütəxəssis: Cəlil bəy", ln=True, align='C')
-    pdf.ln(5)
+    # Nömrəni kodda buradan dəyişə bilərsən
+    pdf.cell(0, 5, "Tel: +994 50 XXX XX XX | Ünvan: Sumqayıt ş.", ln=True, align='C')
+    pdf.ln(8)
     
     # 3. BAŞLIQ
     report_no = datetime.now().strftime("%d%m%Y-%H%M")
@@ -70,7 +71,7 @@ def create_pdf_report(data, ai_text):
     pdf.cell(45, 8, "Xəta Kodu:", border='LTB'); pdf.cell(50, 8, f"{data['fault_code']}", border='RTB', ln=1)
     pdf.ln(8)
 
-    # 5. DİAQNOSTİKA CƏDVƏLİ (Dinamik status)
+    # 5. DİAQNOSTİKA CƏDVƏLİ
     pdf.set_font("DejaVu", "B", 10)
     pdf.cell(50, 8, "Sistem / Blok", border=1, align='C', fill=True)
     pdf.cell(25, 8, "Status", border=1, align='C', fill=True)
@@ -78,8 +79,6 @@ def create_pdf_report(data, ai_text):
     pdf.cell(85, 8, "Təsvir və İzah", border=1, ln=1, align='C', fill=True)
     
     pdf.set_font("DejaVu", "", 9)
-    
-    # Cədvəlin içini AI mətni ilə yoxlayırıq
     systems = [
         ("Mühərrik (ECU/PCM)", "ECU", "Mühərrik"),
         ("Sürətlər qutusu (TCM)", "TCM", "Sürətlər qutusu"),
@@ -88,7 +87,6 @@ def create_pdf_report(data, ai_text):
     ]
 
     for sys_name, code_key, name_key in systems:
-        # Əgər AI mətni daxilində sistem adı keçirsə xəta var deyirik
         is_error = name_key.lower() in ai_text.lower() or code_key.lower() in ai_text.lower()
         status = "Xəta var" if is_error else "Normal"
         code = data['fault_code'] if is_error else "-"
@@ -114,7 +112,7 @@ def create_pdf_report(data, ai_text):
     
     mohur_file = "mohur.png.jpg" if os.path.exists("mohur.png.jpg") else "mohur.png"
     if os.path.exists(mohur_file):
-        pdf.image(mohur_file, 10, y_pos, 45) # Möhür sol tərəfdə
+        pdf.image(mohur_file, 10, y_pos, 45) 
         pdf.set_y(y_pos + 50)
         
     # 8. DISCLAIMER
@@ -135,9 +133,11 @@ async def handle_data(message: types.Message):
     res = json.loads(message.web_app_data.data)
     wait = await message.answer("🧠 Süni İntellekt analiz edir...")
     try:
+        # AI üçün qəti xəbərdarlıqlar (faiz və ulduzlar üçün)
         prompt = (f"Sən professional avto-mühəndissən. Avtomobil: {res['car_info']}, Xəta: {res['fault_code']}. "
-                  "Hesabatı Azərbaycan dilində yaz. Nasazlıqları faizlə (%) sırala. "
-                  "Fiziki olaraq nəyi yoxlamalı olduğunu dəqiq qeyd et. Mətndə ulduz işarələrindən istifadə etmə.")
+                  "Hesabatı Azərbaycan dilində yaz. Nasazlıqları faizlə sırala. "
+                  "MÜTLƏQ DİQQƏT: Faiz işarəsini rəqəmdən sonra yaz (məsələn: 80%). Qətiyyən %80 yazma! "
+                  "Fiziki olaraq nəyi yoxlamalı olduğunu dəqiq qeyd et. Mətndə ulduz (*) işarələrindən qətiyyən istifadə etmə.")
         
         ai = client.chat.completions.create(model="gpt-4o", messages=[{"role":"system","content":"Sən professional diaqnostsan."},{"role":"user","content":prompt}])
         pdf = create_pdf_report(res, ai.choices[0].message.content)
