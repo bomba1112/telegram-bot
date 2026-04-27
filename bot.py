@@ -21,7 +21,6 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 def create_pdf_report(data, ai_text):
-    # PDF-i çökdürə biləcək simvolları və ulduzları təmizləyirik
     ai_text = ai_text.replace("**", "").replace("*", "")
     ai_text = re.sub(r'[-=_]{4,}', ' ', ai_text) 
     ai_text = re.sub(r'([^\s]{40})', r'\1 ', ai_text) 
@@ -29,7 +28,6 @@ def create_pdf_report(data, ai_text):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Şriftlərin koda tanıdılması
     f_r, f_b = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
     if not os.path.exists(f_r): 
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
@@ -40,13 +38,15 @@ def create_pdf_report(data, ai_text):
     pdf.add_font("DejaVu", "B", f_b)
     pdf.add_page()
     
-    # 1. LOGO (100% BÖYÜDÜLMÜŞ ÖLÇÜ)
+    # 1. LOGO (MAKSİMUM NƏHƏNG ÖLÇÜ)
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
-        # Eni 120 (ikiqat böyük), X oxu 45 (tam mərkəz üçün)
-        pdf.image(logo_file, 45, 10, 120) 
-        # Loqo nəhəng olduğu üçün yazıları xeyli aşağıdan (130-dan) başladırıq ki, üst-üstə düşməsin
-        pdf.set_y(130) 
+        # A4 vərəqi 210 mm-dir. 180 mm en verirəm (kənarlarda 15 mm boşluq qalır).
+        # x = 15 (vərəqin tən ortası), y = 10, w = 180 (Maksimum genişlik)
+        pdf.image(logo_file, 15, 10, 180) 
+        
+        # BOŞLUQ 3 DƏFƏ AZALDILDI (Əvvəl 130 idi, indi 85 etdim ki, yaxın olsun)
+        pdf.set_y(85) 
     else:
         pdf.set_y(20)
     
@@ -110,7 +110,7 @@ def create_pdf_report(data, ai_text):
     
     pdf.ln(8)
 
-    # 6. AI ANALİZİ (Rəngləmə ilə)
+    # 6. AI ANALİZİ
     pdf.set_font("DejaVu", "B", 11)
     pdf.cell(0, 10, "USTA RƏYİ VƏ TÖVSİYƏLƏR (AI ANALİZİ)", ln=True)
     
@@ -133,7 +133,7 @@ def create_pdf_report(data, ai_text):
     pdf.set_text_color(0, 0, 0)
     pdf.ln(10)
 
-    # 7. MÖHÜR (Sol tərəfdə)
+    # 7. MÖHÜR 
     y_pos = pdf.get_y()
     if y_pos > 240: pdf.add_page(); y_pos = 20
     
@@ -142,7 +142,7 @@ def create_pdf_report(data, ai_text):
         pdf.image(mohur_file, 10, y_pos, 45) 
         pdf.set_y(y_pos + 50)
         
-    # 8. DISCLAIMER
+    # 8. DISCLAIMER 
     pdf.set_font("DejaVu", "", 8)
     disclaimer = "Bu hesabat yalnız diaqnostika anında avtomobilin elektron sistemlərinin vəziyyətini əks etdirir və təmir məqsədi daşımır."
     pdf.set_x(10)
