@@ -41,18 +41,12 @@ def create_pdf_report(data, ai_text):
     # 1. LOGO (MAKSİMUM NƏHƏNG ÖLÇÜ)
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
-        # A4 vərəqi 210 mm-dir. 180 mm en verirəm (kənarlarda 15 mm boşluq qalır).
-        # x = 15 (vərəqin tən ortası), y = 10, w = 180 (Maksimum genişlik)
         pdf.image(logo_file, 15, 10, 180) 
-        
-        # BOŞLUQ 3 DƏFƏ AZALDILDI (Əvvəl 130 idi, indi 85 etdim ki, yaxın olsun)
         pdf.set_y(85) 
     else:
         pdf.set_y(20)
     
-    # 2. SERVİS VƏ MÜTƏXƏSSİS MƏLUMATLARI 
-    pdf.set_font("DejaVu", "B", 14)
-    pdf.cell(0, 8, "AVTODİAQNOSTİKA SERVİSİ", ln=True, align='C')
+    # 2. MÜTƏXƏSSİS MƏLUMATLARI (Servis sözü silindi)
     pdf.set_font("DejaVu", "", 10)
     pdf.cell(0, 6, "Mütəxəssis: Cəlil bəy", ln=True, align='C')
     pdf.cell(0, 6, "Tel: +994 50 250 62 42 | Ünvan: Azərbaycan, Sumqayıt ş.", ln=True, align='C')
