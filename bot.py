@@ -9,11 +9,10 @@ from aiogram.filters import Command
 from fpdf import FPDF
 import openai
 
-# --- MƏLUMATLAR ---
+# --- TƏHLÜKƏSİZ MƏLUMATLAR ---
 TOKEN = "8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas"
-OPENAI_KEY = "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"
-
-# !!! BURAYA SƏNİN GİTHUB PAGES LİNKİNİ QOYDUQ !!!
+# Açar artıq burada deyil, Railway-in Variables hissəsindədir
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 WEB_APP_URL = "https://bomba1112.github.io/telegram-bot/" 
 
 client = openai.OpenAI(api_key=OPENAI_KEY, http_client=httpx.Client(trust_env=False))
@@ -38,11 +37,7 @@ def create_pdf_report(data, ai_text):
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    # Burada WEB_APP_URL böyük hərflərlə yazılmalıdır (yuxarıdakı kimi)
-    markup = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="🚀 PANELİ AÇ", web_app=WebAppInfo(url=WEB_APP_URL))]], 
-        resize_keyboard=True
-    )
+    markup = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="🚀 PANELİ AÇ", web_app=WebAppInfo(url=WEB_APP_URL))]], resize_keyboard=True)
     await message.answer("Sistemi idarə etmək üçün Paneli açın:", reply_markup=markup)
 
 @dp.message(lambda m: m.web_app_data is not None)
