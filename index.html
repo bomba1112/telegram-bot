@@ -6,29 +6,64 @@
     <title>Diaqnostika Paneli</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .card { background: #2d2d2d; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        h2 { color: #0088cc; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #404040; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #0088cc; border: none; color: white; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        button:active { background: #006699; }
+        body { 
+            font-family: sans-serif; 
+            background: #1a1a1a; 
+            color: white; 
+            text-align: center; 
+            padding: 20px; 
+            margin: 0;
+        }
+        .box { 
+            background: #2d2d2d; 
+            padding: 20px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+        }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            border: none; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            background: #404040;
+            color: white;
+        }
+        input::placeholder {
+            color: #aaa;
+        }
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            background: #0088cc; 
+            border: none; 
+            color: white; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            font-size: 18px; 
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        button:active {
+            background: #006699;
+        }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="box">
         <h2>📊 DİAQNOSTİKA PANELİ</h2>
-        <p>Məlumatları daxil edin:</p>
-        <input type="text" id="name" placeholder="Müştəri Adı və Soyadı">
-        <input type="text" id="car" placeholder="Avtomobil (Məs: BMW X5, 2018)">
-        <input type="text" id="fault" placeholder="Xəta Kodu (Məs: P0300)">
-        <button id="send">HESABATI HAZIRLA</button>
+        <input type="text" id="name" placeholder="Müştəri Adı">
+        <input type="text" id="car" placeholder="Avtomobil (Məs: Prius 30)">
+        <input type="text" id="fault" placeholder="Xəta Kodu (Məs: P0420)">
+        <button id="btn">HESABATI HAZIRLA</button>
     </div>
-
     <script>
         let tg = window.Telegram.WebApp;
-        tg.expand(); // Pəncərəni tam ekran açır
-
-        document.getElementById("send").onclick = function() {
+        tg.expand();
+        
+        document.getElementById("btn").onclick = function() {
             let name = document.getElementById("name").value;
             let car = document.getElementById("car").value;
             let fault = document.getElementById("fault").value;
@@ -43,9 +78,9 @@
                 car_info: car,
                 fault_code: fault
             };
-
-            tg.sendData(JSON.stringify(data)); // Məlumatı bota göndərir
-            tg.close(); // Paneli bağlayır
+            
+            tg.sendData(JSON.stringify(data));
+            tg.close();
         };
     </script>
 </body>
