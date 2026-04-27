@@ -21,6 +21,7 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
 def create_pdf_report(data, ai_text):
+    # PDF-in çökməməsi üçün təhlükəsizlik süzgəci
     ai_text = ai_text.replace("**", "").replace("*", "")
     ai_text = re.sub(r'[-=_]{4,}', ' ', ai_text) 
     ai_text = re.sub(r'([^\s]{40})', r'\1 ', ai_text) 
@@ -28,6 +29,7 @@ def create_pdf_report(data, ai_text):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     
+    # Şriftlərin koda tanıdılması
     f_r, f_b = "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"
     if not os.path.exists(f_r): 
         urllib.request.urlretrieve("https://cdn.jsdelivr.net/npm/dejavu-fonts-ttf@2.37.0/ttf/DejaVuSans.ttf", f_r)
@@ -38,15 +40,15 @@ def create_pdf_report(data, ai_text):
     pdf.add_font("DejaVu", "B", f_b)
     pdf.add_page()
     
-    # 1. LOGO (MAKSİMUM NƏHƏNG ÖLÇÜ)
+    # 1. LOGO (180mm NƏHƏNG ÖLÇÜ VƏ DÜZGÜN KOORDİNAT)
     logo_file = "logo.png.jpg" if os.path.exists("logo.png.jpg") else "logo.png"
     if os.path.exists(logo_file):
         pdf.image(logo_file, 15, 10, 180) 
-        pdf.set_y(85) 
+        pdf.set_y(85) # Yazılar loqonun altından başlayır (boşluq tənzimlənib)
     else:
         pdf.set_y(20)
     
-    # 2. MÜTƏXƏSSİS MƏLUMATLARI (Servis sözü silindi)
+    # 2. MÜTƏXƏSSİS MƏLUMATLARI (Bütün əlavə sözlər silindi)
     pdf.set_font("DejaVu", "", 10)
     pdf.cell(0, 6, "Mütəxəssis: Cəlil bəy", ln=True, align='C')
     pdf.cell(0, 6, "Tel: +994 50 250 62 42 | Ünvan: Azərbaycan, Sumqayıt ş.", ln=True, align='C')
@@ -104,7 +106,7 @@ def create_pdf_report(data, ai_text):
     
     pdf.ln(8)
 
-    # 6. AI ANALİZİ
+    # 6. AI ANALİZİ VƏ RƏNGLƏMƏ
     pdf.set_font("DejaVu", "B", 11)
     pdf.cell(0, 10, "USTA RƏYİ VƏ TÖVSİYƏLƏR (AI ANALİZİ)", ln=True)
     
@@ -155,13 +157,16 @@ async def handle_data(message: types.Message):
     res = json.loads(message.web_app_data.data)
     wait = await message.answer("🧠 Süni İntellekt analiz edir...")
     try:
+        # Xüsusi olaraq usta dili və rus terminləri üçün prompt
         prompt = (f"Sən professional avto-mühəndissən. Avtomobil: {res['car_info']}, Xəta: {res['fault_code']}. "
                   "Hesabatı Azərbaycan dilində yaz. Nasazlıqları faizlə sırala. "
-                  "MÜHÜM: Faiz işarəsini rəqəmdən dərhal sonra yaz (məs: 75%). Əsla əvvələ qoyma. "
+                  "MÜHÜM DİQQƏT: Texniki detalların (sensor, klapan, blok və s.) adını yazanda mötərizədə mütləq rusca qarşılığını yaz (məsələn: krank mili mövqeyi sensoru (датчик положения коленвала)). "
+                  "Faiz işarəsini rəqəmdən dərhal sonra yaz (məs: 75%). Əsla əvvələ qoyma. "
                   "Mətndə heç bir ulduz (*), HTML, qalınlaşdırma və ya ayırıcı xətt (----) işarələrindən istifadə etmə! "
                   "Sən sadəcə mətni yaz, mətnin rənglənməsini mənim sistemim edəcək. "
-                  "Fiziki olaraq hansı pini və ya kabeli yoxlamaq lazımdırsa, dəqiq yaz.")
+                  "Fiziki olaraq hansı pini və ya kabeli yoxlamaq lazımdırsa, usta dilində dəqiq yaz.")
         
+        # Pro model olan gpt-4o istifadə edilir
         ai = client.chat.completions.create(
             model="gpt-4o", 
             messages=[{"role":"system","content":"Sən professional diaqnostsan."},{"role":"user","content":prompt}]
