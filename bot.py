@@ -16,7 +16,7 @@ import PyPDF2
 
 # --- BURANI DƏYİŞ ---
 TOKEN = "8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas"
-OPENAI_KEY = "BURA_OPENAI_API_AÇARINI_YAPIŞDIR"  # <--- Açarı buraya yaz!
+OPENAI_KEY = "8798520109:AAG0iV6LFwy7w-w3ot6_I80ETSzQoWrNKas"  # <--- Açarı buraya yaz!
 
 WEB_APP_URL = "https://bomba1112.github.io/telegram-bot/" 
 
